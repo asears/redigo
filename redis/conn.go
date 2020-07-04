@@ -389,7 +389,7 @@ func (c *conn) writeLen(prefix byte, n int) error {
 	i := len(c.lenScratch) - 3
 	for {
 		c.lenScratch[i] = byte('0' + n%10)
-		i -= 1
+		i--
 		n = n / 10
 		if n == 0 {
 			break
@@ -450,9 +450,7 @@ func (c *conn) writeArg(arg interface{}, argumentTypeOK bool) (err error) {
 	case bool:
 		if arg {
 			return c.writeString("1")
-		} else {
-			return c.writeString("0")
-		}
+		return c.writeString("0")
 	case nil:
 		return c.writeString("")
 	case Argument:
@@ -622,7 +620,7 @@ func (c *conn) readReply() (interface{}, error) {
 
 func (c *conn) Send(cmd string, args ...interface{}) error {
 	c.mu.Lock()
-	c.pending += 1
+	c.pending++
 	c.mu.Unlock()
 	if c.writeTimeout != 0 {
 		c.conn.SetWriteDeadline(time.Now().Add(c.writeTimeout))
@@ -666,7 +664,7 @@ func (c *conn) ReceiveWithTimeout(timeout time.Duration) (reply interface{}, err
 	// case where Receive is called before Send.
 	c.mu.Lock()
 	if c.pending > 0 {
-		c.pending -= 1
+		c.pending--
 	}
 	c.mu.Unlock()
 	if err, ok := reply.(Error); ok {
